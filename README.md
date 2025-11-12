@@ -1,43 +1,63 @@
-# unpipe
+# undefsafe
 
-[![NPM Version][npm-image]][npm-url]
-[![NPM Downloads][downloads-image]][downloads-url]
-[![Node.js Version][node-image]][node-url]
-[![Build Status][travis-image]][travis-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
+Simple *function* for retrieving deep object properties without getting "Cannot read property 'X' of undefined"
 
-Unpipe a stream from all destinations.
+Can also be used to safely set deep values.
 
-## Installation
-
-```sh
-$ npm install unpipe
-```
-
-## API
+## Usage
 
 ```js
-var unpipe = require('unpipe')
+var object = {
+  a: {
+    b: {
+      c: 1,
+      d: [1,2,3],
+      e: 'remy'
+    }
+  }
+};
+
+console.log(undefsafe(object, 'a.b.e')); // "remy"
+console.log(undefsafe(object, 'a.b.not.found')); // undefined
 ```
 
-### unpipe(stream)
+Demo: [https://jsbin.com/eroqame/3/edit?js,console](https://jsbin.com/eroqame/3/edit?js,console)
 
-Unpipes all destinations from a given stream. With stream 2+, this is
-equivalent to `stream.unpipe()`. When used with streams 1 style streams
-(typically Node.js 0.8 and below), this module attempts to undo the
-actions done in `stream.pipe(dest)`.
+## Setting
 
-## License
+```js
+var object = {
+  a: {
+    b: [1,2,3]
+  }
+};
 
-[MIT](LICENSE)
+// modified object
+var res = undefsafe(object, 'a.b.0', 10);
 
-[npm-image]: https://img.shields.io/npm/v/unpipe.svg
-[npm-url]: https://npmjs.org/package/unpipe
-[node-image]: https://img.shields.io/node/v/unpipe.svg
-[node-url]: http://nodejs.org/download/
-[travis-image]: https://img.shields.io/travis/stream-utils/unpipe.svg
-[travis-url]: https://travis-ci.org/stream-utils/unpipe
-[coveralls-image]: https://img.shields.io/coveralls/stream-utils/unpipe.svg
-[coveralls-url]: https://coveralls.io/r/stream-utils/unpipe?branch=master
-[downloads-image]: https://img.shields.io/npm/dm/unpipe.svg
-[downloads-url]: https://npmjs.org/package/unpipe
+console.log(object); // { a: { b: [10, 2, 3] } }
+console.log(res); // 1 - previous value
+```
+
+## Star rules in paths
+
+As of 1.2.0, `undefsafe` supports a `*` in the path if you want to search all of the properties (or array elements) for a particular element.
+
+The function will only return a single result, either the 3rd argument validation value, or the first positive match. For example, the following github data:
+
+```js
+const githubData = {
+        commits: [{
+          modified: [
+            "one",
+            "two"
+          ]
+        }, /* ... */ ]
+      };
+
+// first modified file found in the first commit
+console.log(undefsafe(githubData, 'commits.*.modified.0'));
+
+// returns `two` or undefined if not found
+console.log(undefsafe(githubData, 'commits.*.modified.*', 'two'));
+```
